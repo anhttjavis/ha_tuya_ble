@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import pycountry
 from typing import Any
 
 import voluptuous as vol
@@ -12,7 +11,7 @@ from tuya_iot import AuthType
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
-    OptionsFlowWithConfigEntry,
+    OptionsFlow,
 )
 from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
@@ -22,7 +21,9 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowHandler, FlowResult
 
-from homeassistant.components.tuya.const import (
+from .tuya_ble import SERVICE_UUID, TuyaBLEDeviceCredentials
+
+from .const import (
     CONF_ACCESS_ID,
     CONF_ACCESS_SECRET,
     CONF_APP_TYPE,
@@ -31,18 +32,14 @@ from homeassistant.components.tuya.const import (
     CONF_ENDPOINT,
     CONF_PASSWORD,
     CONF_USERNAME,
+    DOMAIN,
     SMARTLIFE_APP,
+    ALPHA2_TO_TUYA_COUNTRY,
     TUYA_COUNTRIES,
     TUYA_RESPONSE_CODE,
     TUYA_RESPONSE_MSG,
     TUYA_RESPONSE_SUCCESS,
     TUYA_SMART_APP,
-)
-
-from .tuya_ble import SERVICE_UUID, TuyaBLEDeviceCredentials
-
-from .const import (
-    DOMAIN,
 )
 from .devices import TuyaBLEData, get_device_readable_name
 from .cloud import HASSTuyaBLEDeviceManager
@@ -114,10 +111,10 @@ def _show_login_form(
 
     def_country_name: str | None = None
     try:
-        def_country = pycountry.countries.get(alpha_2=flow.hass.config.country)
-        if def_country:
-            def_country_name = def_country.name
-    except:
+        ha_alpha2 = flow.hass.config.country
+        if ha_alpha2 and ha_alpha2 in ALPHA2_TO_TUYA_COUNTRY:
+            def_country_name = ALPHA2_TO_TUYA_COUNTRY[ha_alpha2]
+    except Exception:
         pass
 
     return flow.async_show_form(
@@ -151,12 +148,8 @@ def _show_login_form(
     )
 
 
-class TuyaBLEOptionsFlow(OptionsFlowWithConfigEntry):
+class TuyaBLEOptionsFlow(OptionsFlow):
     """Handle a Tuya BLE options flow."""
-
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        """Initialize options flow."""
-        super().__init__(config_entry)
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -357,4 +350,4 @@ class TuyaBLEConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry: ConfigEntry,
     ) -> TuyaBLEOptionsFlow:
         """Get the options flow for this handler."""
-        return TuyaBLEOptionsFlow(config_entry)
+        return TuyaBLEOptionsFlow()
