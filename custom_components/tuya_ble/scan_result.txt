@@ -1,0 +1,3 @@
+Đang quét các thiết bị Bluetooth xung quanh trong 10 giây...
+
+Tìm thấy 0 thiết bị. Danh sách:
